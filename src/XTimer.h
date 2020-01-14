@@ -57,6 +57,7 @@ public:
 	std::shared_ptr<TimerJob> Post(TimerFunc func, Milliseconds duration, int rounds = -1);
 
 private:
+	void Delay(int tick_count);
     void TimeWalker();
 
 private:

@@ -1,4 +1,5 @@
 #include  "XTimer.h"
+#include <future>
 
 XTimer::XTimer() : m_bStart(false)
 {
@@ -110,6 +111,18 @@ std::shared_ptr<TimerJob> XTimer::Post(TimerFunc func, Milliseconds duration, in
 	return job;
 }
 
+void XTimer::Delay(int tick_count)
+{
+	for (uint64_t i = 0; i < tick_count; i++)
+	{
+#ifdef _WIN32
+		__nop();
+#else
+		__asm__ __volatile__("rep;nop" : : : "memory");
+#endif
+	}
+}
+
 void XTimer::TimeWalker()
 {
 	std::shared_ptr<TimerJob> job = nullptr;
@@ -135,7 +148,8 @@ void XTimer::TimeWalker()
 
 			if (job->m_timeExpireTime > SteadyClock::now())
 			{
-				std::this_thread::sleep_for(Nanoseconds(100));
+				//std::this_thread::sleep_for(Nanoseconds(100));
+				Delay(100);
 				continue;
 			}
 
