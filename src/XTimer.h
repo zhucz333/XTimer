@@ -25,7 +25,6 @@ using TimePoint = std::chrono::steady_clock::time_point;
 using Milliseconds = std::chrono::milliseconds;
 using Microseconds = std::chrono::microseconds;
 using Nanoseconds = std::chrono::nanoseconds;
-using TimerJobQueue = std::priority_queue<std::shared_ptr<TimerJob>, std::vector<std::shared_ptr<TimerJob>>, std::greater<std::shared_ptr<TimerJob>>>;
 
 struct TimerJob_
 {
@@ -34,12 +33,14 @@ struct TimerJob_
 	std::atomic<bool> m_atomicCancelled;
 	TimePoint m_timeExpireTime;
 	TimerFunc m_funcTimerFunc;
+	inline bool operator > (TimerJob& b)
+	{
+		return m_timeExpireTime > b.m_timeExpireTime;
+	}
 };
 
-inline bool operator > (std::shared_ptr<TimerJob>& a, std::shared_ptr<TimerJob>& b)
-{
-	return a->m_timeExpireTime > b->m_timeExpireTime;
-}
+auto comp = [](const std::shared_ptr<TimerJob>& task1, const std::shared_ptr<TimerJob>& task2) { return (*task1 > *task2); };
+typedef std::priority_queue<std::shared_ptr<TimerJob>, std::vector<std::shared_ptr<TimerJob>>, decltype(comp)> TimerJobQueue;
 
 class XTimer 
 {
@@ -64,7 +65,7 @@ private:
 
 	std::condition_variable m_cvTimerJob;
 	std::mutex m_mutexTimerJob;
-	TimerJobQueue m_queueTimerJob;
+	TimerJobQueue m_queueTimerJob{comp};
 } ;
 
 #endif
